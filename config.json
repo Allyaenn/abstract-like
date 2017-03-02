@@ -1,0 +1,8 @@
+{
+  "shapes" : [{"0" : "square"},
+              {"1" : "circle"},
+              {"2" : "triangle"},
+              {"3" : "hexagon"}],
+  "color" : [{"0" : "#43a2ca"},
+             {"1" : "#2ca25f"}]
+}
