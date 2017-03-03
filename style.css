@@ -6,3 +6,28 @@
 body{
     font: normal 12px Verdana, Arial, sans-serif;
 }
+
+#titre{
+    padding-top:20px ;
+    padding-left:20px ;
+    height: 50px;
+    width : 100%;
+    background-color: #f2f2f2;
+    box-shadow: -1px 11px 18px -1px rgba(82,82,82,1);
+    margin-bottom: 1%;
+}
+
+#content{
+    margin-top: 3%;
+    margin-left: 1%;
+}
+
+#image{
+}
+
+#texte{
+    padding: 1%;
+    width : 30%;
+    margin-top: 1%;
+    border: dashed 2px lightgray;
+}
