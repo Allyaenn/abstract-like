@@ -23,6 +23,8 @@ body{
 }
 
 #image{
+    width :810px;
+    overflow-x:scroll;
 }
 
 #texte{
