@@ -1,64 +1,70 @@
 shapes = null;
+nb_symboles_max = 15
 obselSize = 25;
 step = 54;
-counter = 0;
-var n = 15,
-width = n*54,
-data = d3.range(n).map(generateInteractions);
+data = [];
+iteration_numbers = [];
+width = data.length*54;
 svg = d3.select("#image").append("svg").attr("width",width).attr("height", 200)
 var margin = {top: 20, right: 20, bottom: 20, left: 40},
 // width = +svg.attr("width") - margin.left - margin.right,
 // height = +svg.attr("height") - margin.top - margin.bottom,
 g = svg.append("g");
 
-test = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14]
-var x = d3.scaleBand().rangeRound([0, step * n]).domain(test);
-
+var x = d3.scaleBand().rangeRound([0, step * data.length]).domain(iteration_numbers);
 r = obselSize;
 w = r*2;
-
 drawShapes()
 
 g.append("g")
     .attr("class", "axis axis--x")
     .attr("transform", "translate(0," + 80+ ")")
-    .call(d3.axisBottom(x).ticks(n));
+    .call(d3.axisBottom(x).ticks(data.length));
 
-document.getElementById("add").onclick = tick;
-
-socket.on('interaction', function() {
-    console.log("mamma mia !")
+socket.on('interaction', function(data) {
+    console.log("enacted_interaction : " + data)
+    tick(JSON.parse(data));
 });
 
-function tick() {
+function tick(interaction) {
     // Push a new data point onto the back.
     console.log("ticks")
-    data.push(generateInteractions());
-    n = n + 1
-    test.push(n)
+    data.push(interaction);
+    iteration_numbers.push(data.length-1)
 
     // Redraw the line.
     svg.remove()
-    var width = n*54
+    var width = data.length*54
     svg = d3.select("#image").append("svg").attr("width",width).attr("height", 200),
     margin = {top: 20, right: 20, bottom: 20, left: 40},
     g = svg.append("g");
-    var x = d3.scaleBand().rangeRound([0, step * n]).domain(test);
+    var x = d3.scaleBand().rangeRound([0, step * data.length]).domain(iteration_numbers);
     r = obselSize;
     w = r*2;
     drawShapes()
-    //slide to the left
+    if (data.length>nb_symboles_max){
+        var xm = (nb_symboles_max-1)*54;
+    }
+    else{
+        var xm = (data.length-1)*54;
+    }
 
+    var ym = 250;
+    d3.select("#label").classed('hidden', false)
+        .attr('style', 'left:' + xm +
+            'px; top:' + ym + 'px')
+        .html(interToString(interaction["exp"], interaction["res"]));
 
     g.append("g")
         .attr("class", "axis axis--x")
         .attr("transform", "translate(0," + 80 + ")")
-        .call(d3.axisBottom(x).ticks(n));
+        .call(d3.axisBottom(x).ticks(data.length));
 
      var container = document.getElementById('image');
      sideScroll(container,'right',25,100,10);
 
-
+     var div = document.getElementById('meta_data');
+     div.innerHTML = 'Iteration : ' + data.length-1 + " - Interaction : " + interToString(interaction["exp"], interaction["res"]);
 }
 
 function sideScroll(element,direction,speed,distance,step){
@@ -76,31 +82,45 @@ function sideScroll(element,direction,speed,distance,step){
     }, speed);
 }
 
-function generateInteractions() {
-    return {exp:Math.random() * 2 | 0, res:Math.random() * 2 | 0};
-}
-
 function drawShapes(){
     shapes = g.selectAll("shapes")
         .data(data)
         .enter().append("path")
         .attr("d",function(d,i){
             var path;
-            if (d.exp == 0){
-                path = drawTriangleDown(i)
+            console.log(d)
+            if (d["exp"] == 0){
+                path = drawHalfCircleUp(i)
             }
-            else if (d.exp == 1){
-                path =  drawHalfCircleUp(i)
+            else if (d["exp"] == 1){
+                path =  drawHalfCircleDown(i)
+            }
+            else if (d["exp"] == 2){
+                path =  drawTriangleUp(i)
+            }
+            else if (d["exp"] == 3){
+                path =  drawTriangleDown(i)
             }
             return path;
         })
         .attr('fill', function (d) {
-            if (d.res == 0) {
-                return d3.rgb("#43a2ca");
+            if (d["res"] == 0) {
+                return d3.rgb("#606060");
             }
-            else if (d.res == 1) {
-                return d3.rgb("#2ca25f");
+            else if (d["res"] == 1) {
+                return d3.rgb("#43B9BD");
             }
+        })
+        .on('mousemove', function(d, i) {
+            var xm = +d3.event.pageX;
+            var ym = +d3.event.pageY;
+            d3.select("#tt").classed('hidden', false)
+                .attr('style', 'left:' + (xm + 15) +
+                    'px; top:' + (ym-70) + 'px')
+                .html("Iteration : " + i + "</br>Interaction : " + interToString(d["exp"], d["res"]));
+        })
+        .on('mouseout', function(){
+            d3.select("#tt").classed('hidden', true);
         });
 }
 
@@ -152,4 +172,24 @@ function drawHalfCircleDown(i){
                "m" + -r + ", 0 " +
                "a" + r + "," + r + " 0 1,0 " + r*2 + ",0"
     return path
+}
+
+function interToString(exp, res){
+    if (exp == 0){
+        s = "head left"
+    }
+    else if (exp == 1){
+        s = "head right"
+    }
+    else if (exp == 2){
+        s = "arm left"
+    }
+    else if (exp == 3){
+        s = "arm right"
+    }
+    if (res == 1)
+    {
+        s = s + " (head touch)"
+    }
+    return s
 }

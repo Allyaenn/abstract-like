@@ -20,11 +20,8 @@ io.sockets.on('connection', function (socket) {
 });
 
 io.sockets.on('connection', function (socket) {
-
-  socket.on('aaa', function(data) {
-        console.log("test");
-        io.sockets.emit('interaction');
-        console.log("fin_test");
+  socket.on('interaction', function(data) {
+        console.log("interaction received");
+        io.sockets.emit('interaction', data);
   });
-
 });

@@ -4,29 +4,27 @@
         <script src="/socket.io/socket.io.js"></script>
         <script>
             var socket = io.connect('http://localhost:8080');
-            socket.on('message', function(message) {
-                alert('Le serveur a un message pour vous : ' + message);
-            });
         </script>
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
         <script src="https://d3js.org/d3.v4.min.js"></script>
         <link rel="stylesheet" type="text/css" href="style.css">
-        <title>IAD Visualization</title>
+        <title>DAI Visualization</title>
     </head>
     <body>
         <div id="titre">
-            <h1>IAD Visualization</h1>
+            <h1>DAI Visualization</h1>
         </div>
 
         <div id="content">
             <h3>Enacted Interactions</h3>
             <div id="image"></div>
             <div id="texte">
+                <div id="meta_data">Iteration :  - Interaction : </div>
                 Visualization of the interactions enacted by the agent <br/>
-                Add artificialy interactions by clicking on the add button<br/>
-                <input id="add" type="button" value="Add Interaction" onclick="doFunction();"/>
             </div>
         </div>
+        <div id="tt" class="hidden tooltip"></div>
+        <div id="label" class="hidden tooltip"></div>
         <script type="text/javascript" src="process.js"></script>
     </body>
 </html>

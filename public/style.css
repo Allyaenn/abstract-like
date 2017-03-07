@@ -4,7 +4,7 @@
 }
 
 body{
-    font: normal 12px Verdana, Arial, sans-serif;
+    font: normal 16px Verdana, Arial, sans-serif;
 }
 
 #titre{
@@ -29,7 +29,25 @@ body{
 
 #texte{
     padding: 1%;
-    width : 30%;
+    width : 40%;
     margin-top: 1%;
     border: dashed 2px lightgray;
+}
+
+#meta_data{
+    font: normal 20px Verdana, Arial, sans-serif;
+}
+
+div.tooltip {
+    color: #222;
+    background-color: #fff;
+    padding: .5em;
+    text-shadow: #f5f5f5 0 1px 0;
+    border-radius: 2px;
+    opacity: 0.9;
+    position: absolute;
+}
+
+.hidden {
+    display: none;
 }
