@@ -1,6 +1,6 @@
 shapes = null;
 obselSize = 25;
-step = 54
+step = 54;
 counter = 0;
 var n = 15,
 width = n*54,
@@ -25,6 +25,10 @@ g.append("g")
     .call(d3.axisBottom(x).ticks(n));
 
 document.getElementById("add").onclick = tick;
+
+socket.on('interaction', function() {
+    console.log("mamma mia !")
+});
 
 function tick() {
     // Push a new data point onto the back.
