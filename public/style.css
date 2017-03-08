@@ -24,18 +24,35 @@ body{
 
 #image{
     width :810px;
+    height: 300px;
     overflow-x:scroll;
+    border: dashed 2px lightgray;
+    display: inline-block;
+}
+
+#memory{
+    font: bold 18px Courier, monospace;
+    padding: 1%;
+    margin-left: 5%;
+    border: dashed 2px lightgray;
+    width: 600px;
+    height: 300px;
+    display: inline-block;
+    vertical-align: top;
 }
 
 #texte{
+    font: bold 18px Courier, monospace;
     padding: 1%;
     width : 40%;
     margin-top: 1%;
     border: dashed 2px lightgray;
 }
 
-#meta_data{
-    font: normal 20px Verdana, Arial, sans-serif;
+#logger{
+    font: normal 16px Courier, monospace;
+    height: 300px;
+    overflow-y:scroll;
 }
 
 div.tooltip {
