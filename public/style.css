@@ -19,40 +19,52 @@ body{
 
 #content{
     margin-top: 3%;
-    margin-left: 1%;
 }
 
-#image{
+.columns{
+    height: auto;
+    width: auto;
+    display: inline-block;
+    vertical-align: top;
+    margin: 1%;
+}
+
+#sequence{
+    padding: 1%;
+    margin-bottom: 1%;
+}
+
+#sequence_image{
     width :810px;
     height: 300px;
     overflow-x:scroll;
     border: dashed 2px lightgray;
-    display: inline-block;
 }
 
-#memory{
-    font: bold 18px Courier, monospace;
-    padding: 1%;
-    margin-left: 5%;
-    border: dashed 2px lightgray;
-    width: 600px;
-    height: 300px;
-    display: inline-block;
-    vertical-align: top;
-}
-
-#texte{
-    font: bold 18px Courier, monospace;
+#logger_div{
     padding: 1%;
     width : 40%;
-    margin-top: 1%;
-    border: dashed 2px lightgray;
 }
 
 #logger{
     font: normal 16px Courier, monospace;
     height: 300px;
+    width: 600px;
+    border: dashed 2px lightgray;
     overflow-y:scroll;
+}
+
+#memory{
+    margin-left: 5%;
+    width: auto;
+    height: auto;
+}
+
+#memory_image{
+    padding: 1%;
+    border: dashed 2px lightgray;
+    width: auto;
+    height: auto;
 }
 
 div.tooltip {

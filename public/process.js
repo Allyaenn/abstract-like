@@ -1,14 +1,16 @@
 shapes = null;
 nb_symboles_max = 15
 obselSize = 25;
-step = 54;
+horizontal_gap = 54;
+vertical_gap = 64;
 data = [];
 iteration_numbers = [];
 preInteraction = [];
 postInteraction = [];
-width = data.length*54;
-interactions = d3.select("#image").append("svg").attr("width",width).attr("height", 200);
-memory = d3.select("#memory").append("svg");
+weights = [];
+width = data.length*horizontal_gap;
+interactions = d3.select("#sequence_image").append("svg").attr("width",width).attr("height", 200);
+memory = d3.select("#memory_image").append("svg");
 
 socket.on('interaction', function(data) {
     tick(JSON.parse(data));
@@ -21,17 +23,18 @@ socket.on('log', function(data) {
 
 socket.on('memory', function(data) {
     mem = JSON.parse(data);
-    console.log(mem);
     preInteraction = [];
     postInteraction = [];
+    weights = [];
     for (var i = 0; i<mem.length; i++){
         preInteraction.push(mem[i].preInteraction);
         postInteraction.push(mem[i].postInteraction);
+        weights.push(mem[i].weight);
     }
 
     //drawing of the memory
     memory.remove();
-    memory = d3.select("#memory").append("svg");
+    memory = d3.select("#memory_image").append("svg").attr("width",400).attr("height", mem.length*vertical_gap);
 
     //drawing preInteractions :
     preInt = memory.selectAll("preInt")
@@ -41,16 +44,16 @@ socket.on('memory', function(data) {
             var path;
             //console.log(d)
             if (d["exp"] == 0){
-                path = drawHalfCircleUp(0, i*54)
+                path = drawHalfCircleUp(0, i*vertical_gap)
             }
             else if (d["exp"] == 1){
-                path =  drawHalfCircleUp(0, i*54)
+                path =  drawHalfCircleDown(0, i*vertical_gap)
             }
             else if (d["exp"] == 2){
-                path =  drawHalfCircleUp(0, i*54)
+                path =  drawTriangleUp(0, i*vertical_gap)
             }
             else if (d["exp"] == 3){
-                path =  drawHalfCircleUp(0, i*54)
+                path =  drawTriangleDown(0, i*vertical_gap)
             }
             return path;
         })
@@ -64,8 +67,48 @@ socket.on('memory', function(data) {
         })
 
     //drawing postInteractions :
+    postInt = memory.selectAll("postInt")
+        .data(postInteraction)
+        .enter().append("path")
+        .attr("d",function(d,i){
+            var path;
+            //console.log(d)
+            if (d["exp"] == 0){
+                path = drawHalfCircleUp(horizontal_gap, i*vertical_gap)
+            }
+            else if (d["exp"] == 1){
+                path =  drawHalfCircleDown(horizontal_gap, i*vertical_gap)
+            }
+            else if (d["exp"] == 2){
+                path =  drawTriangleUp(horizontal_gap, i*vertical_gap)
+            }
+            else if (d["exp"] == 3){
+                path =  drawTriangleDown(horizontal_gap, i*vertical_gap)
+            }
+            return path;
+        })
+        .attr('fill', function (d) {
+            if (d["res"] == 0) {
+                return d3.rgb("#606060");
+            }
+            else if (d["res"] == 1) {
+                return d3.rgb("#43B9BD");
+            }
+        })
 
-
+    //Adding proclivities
+    var proclivities = memory.selectAll("proclivities")
+                             .data(weights)
+                             .enter()
+                             .append("text")
+                             .attr("x", function(d) { return (2*horizontal_gap)+obselSize; })
+                             .attr("y", function(d,i) { return ((i+1)*vertical_gap)-obselSize; })
+                             .text( function (d,i) {
+                                 console.log(postInteraction[i].val)
+                                 return d * postInteraction[i].val; })
+                             .attr("font-family", "sans-serif")
+                             .attr("font-size", "24px")
+                             .attr("fill", "black");
 });
 
 function tick(interaction) {
@@ -76,9 +119,9 @@ function tick(interaction) {
     // Redraw the line.
     interactions.remove()
     var width = data.length*54
-    interactions = d3.select("#image").append("svg").attr("width",width).attr("height", 200),
+    interactions = d3.select("#sequence_image").append("svg").attr("width",width).attr("height", 200),
     g = interactions.append("g");
-    var x = d3.scaleBand().rangeRound([0, step * data.length]).domain(iteration_numbers);
+    var x = d3.scaleBand().rangeRound([0, horizontal_gap * data.length]).domain(iteration_numbers);
     drawShapes()
     if (data.length>nb_symboles_max){
         var xm = (nb_symboles_max-1)*54;
@@ -98,7 +141,7 @@ function tick(interaction) {
         .attr("transform", "translate(0," + 80 + ")")
         .call(d3.axisBottom(x).ticks(data.length));
 
-     var container = document.getElementById('image');
+     var container = document.getElementById('sequence_image');
      sideScroll(container,'right',25,100,10);
 }
 
@@ -125,16 +168,16 @@ function drawShapes(){
             var path;
             //console.log(d)
             if (d["exp"] == 0){
-                path = drawHalfCircleUp(i*54, obselSize)
+                path = drawHalfCircleUp(i*horizontal_gap, obselSize)
             }
             else if (d["exp"] == 1){
-                path =  drawHalfCircleDown(i*54, obselSize)
+                path =  drawHalfCircleDown(i*horizontal_gap, obselSize)
             }
             else if (d["exp"] == 2){
-                path =  drawTriangleUp(i*54, obselSize)
+                path =  drawTriangleUp(i*horizontal_gap, obselSize)
             }
             else if (d["exp"] == 3){
-                path =  drawTriangleDown(i*54, obselSize)
+                path =  drawTriangleDown(i*horizontal_gap, obselSize)
             }
             return path;
         })
@@ -191,15 +234,15 @@ function drawCircle(x,y){
 
 function drawHalfCircleUp(x,y){
     var path = "M" + (x+obselSize) + " " + (y+obselSize) +
-               "m" + y + ", 0 "+
+               "m" + obselSize + ", 0 "+
                "a" + obselSize + "," + obselSize + " 0 1,0 "+ -obselSize*2 + ",0"
     return path
 }
 
 function drawHalfCircleDown(x,y){
-    var path = "M" + (x+y) + " " + (y+y) +
-               "m" + -y + ", 0 " +
-               "a" + y + "," + y + " 0 1,0 " + y*2 + ",0"
+    var path = "M" + (x+obselSize) + " " + (y+obselSize) +
+               "m" + -obselSize + ", 0 " +
+               "a" + obselSize + "," + obselSize + " 0 1,0 " + obselSize*2 + ",0"
     return path
 }
 
