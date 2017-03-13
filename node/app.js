@@ -25,14 +25,44 @@ io.sockets.on('connection', function (socket) {
         io.sockets.emit('interaction', data);
   });
 
+  socket.on('mode', function(data) {
+        console.log("mode received");
+        io.sockets.emit('mode', data);
+  });
+
   socket.on('memory', function(data) {
         console.log("memory received");
         io.sockets.emit('memory', data);
   });
 
+  socket.on('exploration', function() {
+        console.log("exploration");
+        io.sockets.emit('exploration');
+  });
+
+  socket.on('activated', function(data) {
+        console.log("activated interactions received");
+        io.sockets.emit('activated', data);
+  });
+
+  socket.on('intended_primitive', function(data) {
+        console.log("primitive intended interaction received");
+        io.sockets.emit('intended_primitive', data);
+  });
+
+  socket.on('intended_composite', function(data) {
+        console.log("composite intended interaction received");
+        io.sockets.emit('intended_composite', data);
+  });
+
   socket.on('log', function(data) {
         console.log("log received");
         io.sockets.emit('log', data);
+  });
+
+  socket.on('reset', function() {
+        console.log("reset received");
+        io.sockets.emit('reset');
   });
 
 });

@@ -67,6 +67,17 @@ body{
     height: auto;
 }
 
+#robot_status{
+    margin-left: 5%;
+    width: auto;
+    height: auto;
+}
+
+#robot_mode{
+    height: 200px;
+    width: 200px;
+}
+
 div.tooltip {
     color: #222;
     background-color: #fff;

@@ -8,6 +8,8 @@ iteration_numbers = [];
 preInteraction = [];
 postInteraction = [];
 weights = [];
+last_pair = [];
+last_pair_positions = []
 width = data.length*horizontal_gap;
 interactions = d3.select("#sequence_image").append("svg").attr("width",width).attr("height", 200);
 memory = d3.select("#memory_image").append("svg");
@@ -16,20 +18,84 @@ socket.on('interaction', function(data) {
     tick(JSON.parse(data));
 });
 
+socket.on('activated', function(data) {
+    memory.selectAll('rect').remove();
+    //interactions.selectAll('rect').remove();
+    positions = data
+    console.log("drawing this : " + positions)
+    //drawing preInteractions :
+    acInt = memory.selectAll("acInt")
+                .data(positions)
+                .enter().append("rect")
+                .attr("x", 0)
+                .attr("y", function(d,i) {
+                    return d*vertical_gap
+                })
+                .attr("width", 250)
+                .attr("height", vertical_gap)
+                .style('fill', "blue")
+                .style("opacity", .3)
+});
+
+socket.on('intended_primitive', function(data) {
+    console.log("intended primitive interactions : " + JSON.parse(data));
+});
+
+socket.on('intended_composite', function(data) {
+    positions = []
+    positions.push(data)
+    //drawing preInteractions :
+    memory.selectAll("rect").remove();
+    inInt = memory.selectAll("inInt")
+                .data(positions)
+                .enter().append("rect")
+                .attr("x", 0)
+                .attr("y", function(d,i) {
+                    return d*vertical_gap
+                })
+                .attr("width", 250)
+                .attr("height", vertical_gap)
+                .style('fill', "green")
+                .style("opacity", .3)
+});
+
+socket.on('exploration', function(data) {
+    console.log("exploration");
+});
+
+socket.on('reset', function() {
+    memory.selectAll("rect").remove();
+    interactions.selectAll("rect").remove();
+});
+
+socket.on('mode', function(data) {
+    var div = document.getElementById('robot_mode');
+    div.innerHTML = '</br> Mode : ' + data;
+});
+
 socket.on('log', function(data) {
     var div = document.getElementById('logger');
     div.innerHTML = div.innerHTML + data + '</br>';
+
+    $("#logger").animate({ scrollTop: $(document).height() }, "slow");
+
 });
 
 socket.on('memory', function(data) {
+
     mem = JSON.parse(data);
     preInteraction = [];
     postInteraction = [];
     weights = [];
+    index = [];
     for (var i = 0; i<mem.length; i++){
         preInteraction.push(mem[i].preInteraction);
         postInteraction.push(mem[i].postInteraction);
         weights.push(mem[i].weight);
+        if (interactionComparison(mem[i].preInteraction,last_pair[0]) && interactionComparison(mem[i].postInteraction,last_pair[1]))
+        {
+            index.push(i);
+        }
     }
 
     //drawing of the memory
@@ -104,17 +170,53 @@ socket.on('memory', function(data) {
                              .attr("x", function(d) { return (2*horizontal_gap)+obselSize; })
                              .attr("y", function(d,i) { return ((i+1)*vertical_gap)-obselSize; })
                              .text( function (d,i) {
-                                 console.log(postInteraction[i].val)
                                  return d * postInteraction[i].val; })
                              .attr("font-family", "sans-serif")
                              .attr("font-size", "24px")
                              .attr("fill", "black");
+
+    //linking interactions and memories
+    var rect_memory = memory.selectAll("rect_memory")
+                .data(index)
+                .enter().append("rect")
+                .attr("x", 0)
+                .attr("y", function(d,i) {
+                    return d*vertical_gap
+                })
+                .attr("width", 250)
+                .attr("height", vertical_gap)
+                .style('fill', "orange")
+                .style("opacity", .3)
+
+    var rect_interactions = interactions.selectAll("rect_interactions")
+                .data(last_pair_positions)
+                .enter().append("rect")
+                .attr("y", obselSize)
+                .attr("x", function(d,i) {
+                    return d*horizontal_gap
+                })
+                .attr("width", 2*horizontal_gap)
+                .attr("height", vertical_gap)
+                .style('fill', "orange")
+                .style("opacity", .3)
 });
 
 function tick(interaction) {
+
+    memory.selectAll('rect').remove();
+
     // Push a new data point onto the back.
     data.push(interaction);
     iteration_numbers.push(data.length-1)
+
+    last_pair = [];
+    last_pair_positions = [];
+
+    last_pair.push(data[data.length-2])
+    last_pair.push(data[data.length-1])
+    last_pair_positions.push(data.length-2)
+
+    console.log(last_pair);
 
     // Redraw the line.
     interactions.remove()
@@ -124,13 +226,13 @@ function tick(interaction) {
     var x = d3.scaleBand().rangeRound([0, horizontal_gap * data.length]).domain(iteration_numbers);
     drawShapes()
     if (data.length>nb_symboles_max){
-        var xm = (nb_symboles_max-1)*54;
+        var xm = (nb_symboles_max-1)*horizontal_gap;
     }
     else{
-        var xm = (data.length-1)*54;
+        var xm = (data.length-1)*horizontal_gap;
     }
 
-    var ym = 250;
+    var ym = 300;
     d3.select("#label").classed('hidden', false)
         .attr('style', 'left:' + xm +
             'px; top:' + ym + 'px')
@@ -264,4 +366,9 @@ function interToString(exp, res){
         s = s + " (head touch)"
     }
     return s
+}
+
+function interactionComparison(it1, it2) {
+    return it1.exp == it2.exp && it1.res == it2.res && it1.val == it2.val;
+
 }
