@@ -3,14 +3,15 @@ nb_symboles_max = 15
 obselSize = 25;
 horizontal_gap = 54;
 vertical_gap = 64;
-data = [];
+intended_interactions = [];
+enacted_interactions = [];
 iteration_numbers = [];
 preInteraction = [];
 postInteraction = [];
 weights = [];
 last_pair = [];
 last_pair_positions = []
-width = data.length*horizontal_gap;
+width = enacted_interactions.length*horizontal_gap;
 interactions = d3.select("#sequence_image").append("svg").attr("width",width).attr("height", 200);
 memory = d3.select("#memory_image").append("svg");
 
@@ -20,7 +21,7 @@ socket.on('interaction', function(data) {
 
 socket.on('activated', function(data) {
     memory.selectAll('rect').remove();
-    //interactions.selectAll('rect').remove();
+    interactions.selectAll('rect').remove();
     positions = data
     console.log("drawing this : " + positions)
     //drawing preInteractions :
@@ -61,6 +62,7 @@ socket.on('intended_composite', function(data) {
 
 socket.on('exploration', function(data) {
     console.log("exploration");
+    //intended_interactions.push({exp : data, res : -1, val = 0});
 });
 
 socket.on('reset', function() {
@@ -69,8 +71,8 @@ socket.on('reset', function() {
 });
 
 socket.on('mode', function(data) {
-    var div = document.getElementById('robot_mode');
-    div.innerHTML = '</br> Mode : ' + data;
+    var imgName = data === 'Exploration' ? 'boussole.png' : 'books_small.png';
+    document.getElementById('robot_mode').innerHTML = '<img src="images/' + imgName + '"width="100" />';
 });
 
 socket.on('log', function(data) {
@@ -106,61 +108,47 @@ socket.on('memory', function(data) {
     preInt = memory.selectAll("preInt")
         .data(preInteraction)
         .enter().append("path")
-        .attr("d",function(d,i){
-            var path;
-            //console.log(d)
-            if (d["exp"] == 0){
-                path = drawHalfCircleUp(0, i*vertical_gap)
-            }
-            else if (d["exp"] == 1){
-                path =  drawHalfCircleDown(0, i*vertical_gap)
-            }
-            else if (d["exp"] == 2){
-                path =  drawTriangleUp(0, i*vertical_gap)
-            }
-            else if (d["exp"] == 3){
-                path =  drawTriangleDown(0, i*vertical_gap)
-            }
-            return path;
-        })
+        .attr("d",function(d,i){ return drawSquare(0, i*vertical_gap);})
         .attr('fill', function (d) {
             if (d["res"] == 0) {
-                return d3.rgb("#606060");
+                return d3.rgb("#969696");
             }
             else if (d["res"] == 1) {
                 return d3.rgb("#43B9BD");
             }
         })
 
+    // add images
+    var imgs = memory.selectAll('imgs')
+                           .data(preInteraction).enter()
+                           .append("image")
+                              .attr("x", "0")
+                              .attr("y", function(d,i){return i*vertical_gap;})
+                              .attr("width", "50px")
+                              .attr("xlink:href", function(d){ return getImagePath(d.exp);})
+
     //drawing postInteractions :
     postInt = memory.selectAll("postInt")
         .data(postInteraction)
         .enter().append("path")
-        .attr("d",function(d,i){
-            var path;
-            //console.log(d)
-            if (d["exp"] == 0){
-                path = drawHalfCircleUp(horizontal_gap, i*vertical_gap)
-            }
-            else if (d["exp"] == 1){
-                path =  drawHalfCircleDown(horizontal_gap, i*vertical_gap)
-            }
-            else if (d["exp"] == 2){
-                path =  drawTriangleUp(horizontal_gap, i*vertical_gap)
-            }
-            else if (d["exp"] == 3){
-                path =  drawTriangleDown(horizontal_gap, i*vertical_gap)
-            }
-            return path;
-        })
+        .attr("d",function(d,i){ return drawSquare(horizontal_gap, i*vertical_gap);})
         .attr('fill', function (d) {
             if (d["res"] == 0) {
-                return d3.rgb("#606060");
+                return d3.rgb("#969696");
             }
             else if (d["res"] == 1) {
                 return d3.rgb("#43B9BD");
             }
         })
+
+    // add images
+    var imgs = memory.selectAll('imgs')
+                           .data(postInteraction).enter()
+                           .append("image")
+                              .attr("x", horizontal_gap)
+                              .attr("y", function(d,i){return i*vertical_gap;})
+                              .attr("width", "50px")
+                              .attr("xlink:href", function(d){ return getImagePath(d.exp);})
 
     //Adding proclivities
     var proclivities = memory.selectAll("proclivities")
@@ -206,30 +194,39 @@ function tick(interaction) {
     memory.selectAll('rect').remove();
 
     // Push a new data point onto the back.
-    data.push(interaction);
-    iteration_numbers.push(data.length-1)
+    enacted_interactions.push(interaction);
+    iteration_numbers.push(enacted_interactions.length-1)
 
     last_pair = [];
     last_pair_positions = [];
 
-    last_pair.push(data[data.length-2])
-    last_pair.push(data[data.length-1])
-    last_pair_positions.push(data.length-2)
+    last_pair.push(enacted_interactions[enacted_interactions.length-2])
+    last_pair.push(enacted_interactions[enacted_interactions.length-1])
+    last_pair_positions.push(enacted_interactions.length-2)
 
     console.log(last_pair);
 
     // Redraw the line.
     interactions.remove()
-    var width = data.length*54
+    var width = enacted_interactions.length*54
     interactions = d3.select("#sequence_image").append("svg").attr("width",width).attr("height", 200),
     g = interactions.append("g");
-    var x = d3.scaleBand().rangeRound([0, horizontal_gap * data.length]).domain(iteration_numbers);
+    var x = d3.scaleBand().rangeRound([0, horizontal_gap * enacted_interactions.length]).domain(iteration_numbers);
     drawShapes()
-    if (data.length>nb_symboles_max){
+    // add images
+    var imgs = interactions.selectAll('imgs')
+                           .data(enacted_interactions).enter()
+                           .append("image")
+                              .attr("x", function(d,i) { return i*horizontal_gap; })
+                              .attr("y", obselSize)
+                              .attr("width", "50px")
+                              .attr("xlink:href", function(d){ return getImagePath(d.exp); })
+
+    if (enacted_interactions.length>nb_symboles_max){
         var xm = (nb_symboles_max-1)*horizontal_gap;
     }
     else{
-        var xm = (data.length-1)*horizontal_gap;
+        var xm = (enacted_interactions.length-1)*horizontal_gap;
     }
 
     var ym = 300;
@@ -241,7 +238,7 @@ function tick(interaction) {
     g.append("g")
         .attr("class", "axis axis--x")
         .attr("transform", "translate(0," + 80 + ")")
-        .call(d3.axisBottom(x).ticks(data.length));
+        .call(d3.axisBottom(x).ticks(enacted_interactions.length));
 
      var container = document.getElementById('sequence_image');
      sideScroll(container,'right',25,100,10);
@@ -264,28 +261,14 @@ function sideScroll(element,direction,speed,distance,step){
 
 function drawShapes(){
     shapes = g.selectAll("shapes")
-        .data(data)
+        .data(enacted_interactions)
         .enter().append("path")
         .attr("d",function(d,i){
-            var path;
-            //console.log(d)
-            if (d["exp"] == 0){
-                path = drawHalfCircleUp(i*horizontal_gap, obselSize)
-            }
-            else if (d["exp"] == 1){
-                path =  drawHalfCircleDown(i*horizontal_gap, obselSize)
-            }
-            else if (d["exp"] == 2){
-                path =  drawTriangleUp(i*horizontal_gap, obselSize)
-            }
-            else if (d["exp"] == 3){
-                path =  drawTriangleDown(i*horizontal_gap, obselSize)
-            }
-            return path;
+            return drawSquare(i*horizontal_gap, obselSize);
         })
         .attr('fill', function (d) {
             if (d["res"] == 0) {
-                return d3.rgb("#606060");
+                return d3.rgb("#969696");
             }
             else if (d["res"] == 1) {
                 return d3.rgb("#43B9BD");
@@ -306,9 +289,9 @@ function drawShapes(){
 
 function drawSquare(x,y){
     var path = "M" + x + " " + y +
-               "L" + x + " " + (y+(y*2)) +
-               "L" + (x+(y*2)) + " " + (y+(y*2)) +
-               "L" + (x+(y*2)) + " " + y + "Z"
+               "L" + x + " " + (y+(obselSize*2)) +
+               "L" + (x+(obselSize*2)) + " " + (y+(obselSize*2)) +
+               "L" + (x+(obselSize*2)) + " " + y + "Z"
     return path
 }
 
@@ -371,4 +354,19 @@ function interToString(exp, res){
 function interactionComparison(it1, it2) {
     return it1.exp == it2.exp && it1.res == it2.res && it1.val == it2.val;
 
+}
+
+function getImagePath(e){
+    if (e == 0){
+        return "images/head_left.png"
+    }
+    else if (e == 1){
+        return "images/head_right.png"
+    }
+    else if (e == 2){
+        return "images/arm_up_left.png"
+    }
+    else if (e == 3){
+      return "images/arm_up_right.png"
+    }
 }

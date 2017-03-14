@@ -35,9 +35,9 @@ io.sockets.on('connection', function (socket) {
         io.sockets.emit('memory', data);
   });
 
-  socket.on('exploration', function() {
-        console.log("exploration");
-        io.sockets.emit('exploration');
+  socket.on('exploration', function(data) {
+        console.log("experiment received");
+        io.sockets.emit('exploration', data);
   });
 
   socket.on('activated', function(data) {
