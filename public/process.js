@@ -1,8 +1,8 @@
 shapes = null;
-nb_symboles_max = 15
-obselSize = 25;
-horizontal_gap = 54;
-vertical_gap = 64;
+nb_symboles_max = 8
+obselSize = 50;
+horizontal_gap = 108;
+vertical_gap = 118;
 intended_interactions = [];
 enacted_interactions = [];
 iteration_numbers = [];
@@ -11,9 +11,10 @@ postInteraction = [];
 weights = [];
 last_pair = [];
 last_pair_positions = []
-width = enacted_interactions.length*horizontal_gap;
-interactions = d3.select("#sequence_image").append("svg").attr("width",width).attr("height", 200);
+width = enacted_interactions.length*horizontal_gap + +horizontal_gap;
+interactions = d3.select("#sequence_image").append("svg").attr("width",width).attr("height", 200).attr("transform", "translate( 0 ," + 100 + ")");
 memory = d3.select("#memory_image").append("svg");
+g_intended = interactions.append("g");
 
 socket.on('interaction', function(data) {
     tick(JSON.parse(data));
@@ -32,14 +33,17 @@ socket.on('activated', function(data) {
                 .attr("y", function(d,i) {
                     return d*vertical_gap
                 })
-                .attr("width", 250)
+                .attr("width", (2*horizontal_gap)+(obselSize/2) + 30)
                 .attr("height", vertical_gap)
                 .style('fill', "blue")
                 .style("opacity", .3)
 });
 
 socket.on('intended_primitive', function(data) {
-    console.log("intended primitive interactions : " + JSON.parse(data));
+    var inter = JSON.parse(data);
+    intended_interactions.push(inter);
+    console.log(intended_interactions);
+    drawIntended();
 });
 
 socket.on('intended_composite', function(data) {
@@ -54,7 +58,7 @@ socket.on('intended_composite', function(data) {
                 .attr("y", function(d,i) {
                     return d*vertical_gap
                 })
-                .attr("width", 250)
+                .attr("width", (2*horizontal_gap)+(obselSize/2) + 30)
                 .attr("height", vertical_gap)
                 .style('fill', "green")
                 .style("opacity", .3)
@@ -62,7 +66,12 @@ socket.on('intended_composite', function(data) {
 
 socket.on('exploration', function(data) {
     console.log("exploration");
-    //intended_interactions.push({exp : data, res : -1, val = 0});
+    var inter = {}
+    inter.exp = data;
+    inter.res = -1;
+    inter.val = 0;
+    intended_interactions.push(inter);
+    drawIntended();
 });
 
 socket.on('reset', function() {
@@ -72,14 +81,14 @@ socket.on('reset', function() {
 
 socket.on('mode', function(data) {
     var imgName = data === 'Exploration' ? 'boussole.png' : 'books_small.png';
-    document.getElementById('robot_mode').innerHTML = '<img src="images/' + imgName + '"width="100" />';
+    document.getElementById('robot_mode').innerHTML = '<img src="images/' + imgName + '"width="100" /></br> Mode ' + data;
 });
 
 socket.on('log', function(data) {
     var div = document.getElementById('logger');
     div.innerHTML = div.innerHTML + data + '</br>';
 
-    $("#logger").animate({ scrollTop: $(document).height() }, "slow");
+    //$("#logger").animate({ scrollTop: $(document).height() }, "slow");
 
 });
 
@@ -122,9 +131,9 @@ socket.on('memory', function(data) {
     var imgs = memory.selectAll('imgs')
                            .data(preInteraction).enter()
                            .append("image")
-                              .attr("x", "0")
-                              .attr("y", function(d,i){return i*vertical_gap;})
-                              .attr("width", "50px")
+                              .attr("x", "10")
+                              .attr("y", function(d,i){return (i*vertical_gap)+10;})
+                              .attr("width", "80px")
                               .attr("xlink:href", function(d){ return getImagePath(d.exp);})
 
     //drawing postInteractions :
@@ -145,9 +154,9 @@ socket.on('memory', function(data) {
     var imgs = memory.selectAll('imgs')
                            .data(postInteraction).enter()
                            .append("image")
-                              .attr("x", horizontal_gap)
-                              .attr("y", function(d,i){return i*vertical_gap;})
-                              .attr("width", "50px")
+                              .attr("x", horizontal_gap + 10)
+                              .attr("y", function(d,i){return (i*vertical_gap) + 10;})
+                              .attr("width", "80px")
                               .attr("xlink:href", function(d){ return getImagePath(d.exp);})
 
     //Adding proclivities
@@ -155,7 +164,7 @@ socket.on('memory', function(data) {
                              .data(weights)
                              .enter()
                              .append("text")
-                             .attr("x", function(d) { return (2*horizontal_gap)+obselSize; })
+                             .attr("x", function(d) { return (2*horizontal_gap)+(obselSize/2); })
                              .attr("y", function(d,i) { return ((i+1)*vertical_gap)-obselSize; })
                              .text( function (d,i) {
                                  return d * postInteraction[i].val; })
@@ -171,12 +180,12 @@ socket.on('memory', function(data) {
                 .attr("y", function(d,i) {
                     return d*vertical_gap
                 })
-                .attr("width", 250)
+                .attr("width", (2*horizontal_gap)+(obselSize/2) + 30)
                 .attr("height", vertical_gap)
                 .style('fill', "orange")
                 .style("opacity", .3)
 
-    var rect_interactions = interactions.selectAll("rect_interactions")
+    var rect_interactions = g_enacted.selectAll("rect_interactions")
                 .data(last_pair_positions)
                 .enter().append("rect")
                 .attr("y", obselSize)
@@ -204,44 +213,16 @@ function tick(interaction) {
     last_pair.push(enacted_interactions[enacted_interactions.length-1])
     last_pair_positions.push(enacted_interactions.length-2)
 
-    console.log(last_pair);
-
     // Redraw the line.
     interactions.remove()
-    var width = enacted_interactions.length*54
-    interactions = d3.select("#sequence_image").append("svg").attr("width",width).attr("height", 200),
-    g = interactions.append("g");
-    var x = d3.scaleBand().rangeRound([0, horizontal_gap * enacted_interactions.length]).domain(iteration_numbers);
-    drawShapes()
-    // add images
-    var imgs = interactions.selectAll('imgs')
-                           .data(enacted_interactions).enter()
-                           .append("image")
-                              .attr("x", function(d,i) { return i*horizontal_gap; })
-                              .attr("y", obselSize)
-                              .attr("width", "50px")
-                              .attr("xlink:href", function(d){ return getImagePath(d.exp); })
+    var width = (enacted_interactions.length+1)*horizontal_gap;
+    interactions = d3.select("#sequence_image").append("svg").attr("width",width).attr("height", 300);
 
-    if (enacted_interactions.length>nb_symboles_max){
-        var xm = (nb_symboles_max-1)*horizontal_gap;
-    }
-    else{
-        var xm = (enacted_interactions.length-1)*horizontal_gap;
-    }
+    drawEnactedAndAxis(interaction);
+    drawIntended();
 
-    var ym = 300;
-    d3.select("#label").classed('hidden', false)
-        .attr('style', 'left:' + xm +
-            'px; top:' + ym + 'px')
-        .html(interToString(interaction["exp"], interaction["res"]));
-
-    g.append("g")
-        .attr("class", "axis axis--x")
-        .attr("transform", "translate(0," + 80 + ")")
-        .call(d3.axisBottom(x).ticks(enacted_interactions.length));
-
-     var container = document.getElementById('sequence_image');
-     sideScroll(container,'right',25,100,10);
+    var container = document.getElementById('sequence_image');
+    sideScroll(container,'right',25,200,10);
 }
 
 function sideScroll(element,direction,speed,distance,step){
@@ -259,8 +240,14 @@ function sideScroll(element,direction,speed,distance,step){
     }, speed);
 }
 
-function drawShapes(){
-    shapes = g.selectAll("shapes")
+function drawEnactedAndAxis(interaction){
+
+    console.log("Drawing enacted");
+
+    g_enacted = interactions.append("g").attr("transform", "translate(0 ,80)");
+    var x = d3.scaleBand().rangeRound([0, horizontal_gap * enacted_interactions.length]).domain(iteration_numbers);
+
+    shapes = g_enacted.selectAll("shapes")
         .data(enacted_interactions)
         .enter().append("path")
         .attr("d",function(d,i){
@@ -279,13 +266,84 @@ function drawShapes(){
             var ym = +d3.event.pageY;
             d3.select("#tt").classed('hidden', false)
                 .attr('style', 'left:' + (xm + 15) +
-                    'px; top:' + (ym-70) + 'px')
+                    'px; top:' + (ym-85) + 'px')
+                .html("Iteration: " + i + "</br>Interaction: " + interToString(d["exp"], d["res"]));
+        })
+        .on('mouseout', function(){
+            d3.select("#tt").classed('hidden', true);
+        });
+        // add images
+        var imgs = g_enacted.selectAll('imgs')
+                               .data(enacted_interactions).enter()
+                               .append("image")
+                                  .attr("x", function(d,i) { return (i*horizontal_gap) + 10; })
+                                  .attr("y", obselSize+10)
+                                  .attr("width", "75px")
+                                  .attr("xlink:href", function(d){ return getImagePath(d.exp); })
+
+        if (enacted_interactions.length>nb_symboles_max-1){
+            var xm = (nb_symboles_max-2)*horizontal_gap + 30;
+        }
+        else{
+            var xm = (enacted_interactions.length-1)*horizontal_gap + 30;
+        }
+
+        var ym = 440;
+        d3.select("#label").classed('hidden', false)
+            .attr('style', 'left:' + xm +
+                'px; top:' + ym + 'px')
+            .html(interToString(interaction["exp"], interaction["res"]));
+
+        g_enacted.append("g")
+                    .attr("class", "axis axis--x")
+                    .attr("transform", "translate(0," + 160 + ")")
+                    .call(d3.axisBottom(x).ticks(enacted_interactions.length));
+}
+
+function drawIntended(){
+    console.log("Drawing intended");
+    g_intended.remove();
+    g_intended = interactions.append("g").attr("transform", "translate(0 ,-40)");
+
+    squares_intended = g_intended.selectAll("squares_intended")
+        .data(intended_interactions)
+        .enter().append("path")
+        .attr("d",function(d,i){
+            return drawSquare(i*horizontal_gap, obselSize);
+        })
+        .attr('fill', function (d) {
+            if (d["res"] == 0) {
+                return d3.rgb("#969696");
+            }
+            else if (d["res"] == 1) {
+                return d3.rgb("#43B9BD");
+            }
+            else{
+                return d3.rgb("white");
+            }
+        })
+        .on('mousemove', function(d, i) {
+            var xm = +d3.event.pageX;
+            var ym = +d3.event.pageY;
+            d3.select("#tt").classed('hidden', false)
+                .attr('style', 'left:' + (xm + 15) +
+                    'px; top:' + (ym-85) + 'px')
                 .html("Iteration : " + i + "</br>Interaction : " + interToString(d["exp"], d["res"]));
         })
         .on('mouseout', function(){
             d3.select("#tt").classed('hidden', true);
         });
+
+     var imgs_intended = g_intended.selectAll('imgs_intended')
+                           .data(intended_interactions).enter()
+                           .append("image")
+                              .attr("x", function(d,i) { return (i*horizontal_gap) + 10; })
+                              .attr("y", obselSize + 10)
+                              .attr("width", "80px")
+                              .attr("xlink:href", function(d){ return getImagePath(d.exp);})
 }
+
+
 
 function drawSquare(x,y){
     var path = "M" + x + " " + y +

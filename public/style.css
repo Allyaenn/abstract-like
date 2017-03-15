@@ -35,8 +35,8 @@ body{
 }
 
 #sequence_image{
-    width :810px;
-    height: 300px;
+    width :864px;
+    height: 320px;
     overflow-x:scroll;
     border: dashed 2px lightgray;
 }
